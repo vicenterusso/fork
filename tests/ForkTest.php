@@ -182,15 +182,28 @@ test('allow 2nd process to be done before the 1st', function () {
             },
         )
     )->toEqual([2,1]);
-});
 
-test('it throws exception in case of unexpected exit status', function () {
-    expect(
-        fn () => Fork::new()->run(
-            static function () {
-                exit(1);
+test('check catching exception in task', function () {
+    Fork::new()
+        ->run(
+            function () {
+                usleep(1000000);
+
+                return 'first';
             },
-        )
-    )->toThrow(CouldNotManageTask::class);
+            function () {
+                usleep(500000);
 
-});
+                throw new TestException('second exception');
+            },
+            function () {
+                usleep(200000);
+
+                return 'third';
+            },
+        );
+})->expectException(TestException::class);
+
+class TestException extends Exception
+{
+}
